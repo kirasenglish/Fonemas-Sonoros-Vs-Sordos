@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kira's English: Lab de 11 Fonemas</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
+        
+        body { margin: 0; padding: 0; background-color: #000; font-family: 'Montserrat', sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; color: white; }
+        
+        .action-card { background: #000; border-left: 4px solid #D30000; border-radius: 8px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.7); width: 95%; max-width: 500px; box-sizing: border-box; }
+        
+        .section-header { color: #ffffff; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; border-bottom: 1.5px solid #D30000; padding-bottom: 6px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        
+        .progress-container { width: 100%; background: #222; height: 6px; border-radius: 3px; margin-bottom: 20px; overflow: hidden; }
+        .progress-bar { height: 100%; background: #D30000; width: 0%; transition: width 0.4s ease; }
+        
+        .comparison-container { display: flex; gap: 10px; margin-bottom: 20px; }
+        .side { flex: 1; background: #111; padding: 20px 15px; border-radius: 10px; border: 1px solid #222; text-align: center; cursor: pointer; transition: 0.3s; }
+        .side.active { border-color: #D30000; background: #1a0000; }
+        
+        .label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; margin-bottom: 15px; display: block; color: #ffffff; letter-spacing: 0.5px; }
+
+        .target-text { color: #ffffff; font-size: 1.8rem; font-weight: 700; margin-bottom: 5px; display: block; }
+        .ipa-text { color: #D30000; font-size: 1rem; font-weight: 400; display: block; }
+
+        .translation-text { color: #444; font-size: 0.8rem; font-style: italic; margin-top: 10px; }
+        
+        button { width: 100%; padding: 15px; border-radius: 8px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-family: 'Montserrat', sans-serif; font-size: 0.9rem; margin: 5px 0; border: none; transition: 0.3s; }
+        
+        .btn-speak { background: #D30000; color: white; box-shadow: 0 4px 15px rgba(211, 0, 0, 0.3); }
+        .btn-next { background: #00FF00; color: #000; margin-top: 10px; }
+        .btn-skip { background: transparent; color: #555; border: 1px solid #222; font-size: 0.7rem; margin-top: 10px; }
+        
+        #feedback { margin-top: 15px; min-height: 40px; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; text-align: center; }
+        
+        .success { color: #00FF00; }
+        .error { color: #D30000; }
+        .hidden { display: none; }
+        
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0px 0px rgba(211, 0, 0, 0.7); } 70% { box-shadow: 0 0 0px 15px rgba(211, 0, 0, 0); } 100% { box-shadow: 0 0 0px 0px rgba(211, 0, 0, 0); } }
+        .listening-active { animation: pulse-red 1.5s infinite; background-color: #ff0000 !important; }
+    </style>
+</head>
+<body>
+
+<div class="action-card">
+    <div class="section-header">
+        <span> 11 Fonemas</span>
+        <span id="counter" style="color: #D30000;">1 / 40</span>
+    </div>
+    
+    <div class="progress-container">
+        <div class="progress-bar" id="progress-bar"></div>
+    </div>
+
+    <div id="quiz-area">
+        <div class="comparison-container">
+            <div class="side" id="left-side" onclick="play('v')">
+                <span class="label">Sonora (Vibra)</span>
+                <span class="target-text" id="v-txt"></span>
+                <span class="ipa-text" id="v-ipa"></span>
+                <div class="translation-text" id="v-trans"></div>
+            </div>
+
+            <div class="side" id="right-side" onclick="play('u')">
+                <span class="label">Sorda (Solo Aire)</span>
+                <span class="target-text" id="u-txt"></span>
+                <span class="ipa-text" id="u-ipa"></span>
+                <div class="translation-text" id="u-trans"></div>
+            </div>
+        </div>
+
+        <button class="btn-speak" id="mic" onclick="start()">PRACTICAR PAR: 🎤</button>
+        <div id="feedback">Basado en Unidad 1 Lección 4.</div>
+
+        <button id="next" class="btn-next hidden" onclick="nextPair()">Siguiente Par ➔</button>
+        <button id="skip" class="btn-skip" onclick="nextPair()">Saltar Par</button>
+    </div>
+</div>
+
+<script>
+    const pairs = [
+        // 1. /v/ vs /f/
+        { v: {t: "Leave", p: "/liːv/", s: "Salir"}, u: {t: "Leaf", p: "/liːf/", s: "Hoja"} },
+        { v: {t: "Believe", p: "/bɪˈliːv/", s: "Creer"}, u: {t: "Belief", p: "/bɪˈliːf/", s: "Creencia"} },
+        { v: {t: "Cave", p: "/keɪv/", s: "Cueva"}, u: {t: "Café", p: "/kæˈfeɪ/", s: "Café"} },
+        { v: {t: "Vat", p: "/væt/", s: "Tina"}, u: {t: "Fat", p: "/fæt/", s: "Gordo"} },
+        // 2. /ð/ vs /θ/
+        { v: {t: "This", p: "/ðɪs/", s: "Esto"}, u: {t: "Thin", p: "/θɪn/", s: "Delgado"} },
+        { v: {t: "Then", p: "/ðen/", s: "Entonces"}, u: {t: "Think", p: "/θɪŋk/", s: "Pensar"} },
+        { v: {t: "Breathe", p: "/briːð/", s: "Respirar"}, u: {t: "Breath", p: "/breθ/", s: "Aliento"} },
+        { v: {t: "They", p: "/ðeɪ/", s: "Ellos"}, u: {t: "Thigh", p: "/θaɪ/", s: "Muslo"} },
+        // 3. /z/ vs /s/
+        { v: {t: "Rise", p: "/raɪz/", s: "Subir"}, u: {t: "Rice", p: "/raɪs/", s: "Arroz"} },
+        { v: {t: "Zoo", p: "/zuː/", s: "Zoológico"}, u: {t: "Sue", p: "/suː/", s: "Demandar"} },
+        { v: {t: "Buzz", p: "/bʌz/", s: "Zumbido"}, u: {t: "Bus", p: "/bʌs/", s: "Bus"} },
+        { v: {t: "Peas", p: "/piːz/", s: "Guisantes"}, u: {t: "Peace", p: "/piːs/", s: "Paz"} },
+        // 4. /dʒ/ vs /tʃ/
+        { v: {t: "Joke", p: "/dʒoʊk/", s: "Broma"}, u: {t: "Choke", p: "/tʃoʊk/", s: "Ahogarse"} },
+        { v: {t: "Age", p: "/eɪdʒ/", s: "Edad"}, u: {t: "Each", p: "/iːtʃ/", s: "Cada uno"} },
+        { v: {t: "Ridge", p: "/rɪdʒ/", s: "Cresta"}, u: {t: "Rich", p: "/rɪtʃ/", s: "Rico"} },
+        { v: {t: "Jeep", p: "/dʒiːp/", s: "Jeep"}, u: {t: "Cheap", p: "/tʃiːp/", s: "Barato"} },
+        // 5. /ʒ/ vs /ʃ/
+        { v: {t: "Vision", p: "/ˈvɪʒən/", s: "Visión"}, u: {t: "Mission", p: "/ˈmɪʃən/", s: "Misión"} },
+        { v: {t: "Beige", p: "/beɪʒ/", s: "Beige"}, u: {t: "Bash", p: "/bæʃ/", s: "Golpe"} },
+        { v: {t: "Pleasure", p: "/ˈpleʒər/", s: "Placer"}, u: {t: "Pressure", p: "/ˈpreʃər/", s: "Presión"} },
+        { v: {t: "Measure", p: "/ˈmeʒər/", s: "Medida"}, u: {t: "Mesh", p: "/meʃ/", s: "Malla"} },
+        // 6. /ŋ/ vs /n/
+        { v: {t: "Sing", p: "/sɪŋ/", s: "Cantar"}, u: {t: "Sin", p: "/sɪn/", s: "Pecado"} },
+        { v: {t: "King", p: "/kɪŋ/", s: "Rey"}, u: {t: "Kin", p: "/kɪn/", s: "Familia"} },
+        { v: {t: "Wing", p: "/wɪŋ/", s: "Ala"}, u: {t: "Win", p: "/wɪn/", s: "Ganar"} },
+        { v: {t: "Long", p: "/lɔːŋ/", s: "Largo"}, u: {t: "Lawn", p: "/lɔːn/", s: "Césped"} },
+        // 7. /m/ vs /n/
+        { v: {t: "Gum", p: "/ɡʌm/", s: "Chicle"}, u: {t: "Gun", p: "/ɡʌn/", s: "Pistola"} },
+        { v: {t: "Dam", p: "/dæm/", s: "Presa"}, u: {t: "Dan", p: "/dæn/", s: "Nombre"} },
+        { v: {t: "Beam", p: "/biːm/", s: "Rayo"}, u: {t: "Bean", p: "/biːn/", s: "Frijol"} },
+        { v: {t: "Team", p: "/tiːm/", s: "Equipo"}, u: {t: "Teen", p: "/tiːn/", s: "Adolescente"} },
+        // 8. /d/ vs /t/
+        { v: {t: "Bad", p: "/bæd/", s: "Malo"}, u: {t: "Bat", p: "/bæt/", s: "Bate"} },
+        { v: {t: "Road", p: "/roʊd/", s: "Camino"}, u: {t: "Root", p: "/ruːt/", s: "Raíz"} },
+        { v: {t: "Sad", p: "/sæd/", s: "Triste"}, u: {t: "Sat", p: "/sæt/", s: "Sentó"} },
+        { v: {t: "Mad", p: "/mæd/", s: "Loco"}, u: {t: "Mat", p: "/mæt/", s: "Tapete"} },
+        // 9. Extra contrasts
+        { v: {t: "Gage", p: "/ɡeɪdʒ/", s: "Calibre"}, u: {t: "Cage", p: "/keɪdʒ/", s: "Jaula"} },
+        { v: {t: "Van", p: "/væn/", s: "Furgoneta"}, u: {t: "Fan", p: "/fæn/", s: "Ventilador"} },
+        { v: {t: "Do", p: "/duː/", s: "Hacer"}, u: {t: "To", p: "/tuː/", s: "A/Para"} },
+        { v: {t: "God", p: "/ɡɑːd/", s: "Dios"}, u: {t: "Got", p: "/ɡɑːt/", s: "Obtuvo"} },
+        { v: {t: "Live", p: "/lɪv/", s: "Vivir"}, u: {t: "Lift", p: "/lɪft/", s: "Levantar"} },
+        { v: {t: "Size", p: "/saɪz/", s: "Talla"}, u: {t: "Sice", p: "/saɪs/", s: "Seis (arcaico)"} },
+        { v: {t: "Breathe", p: "/briːð/", s: "Respirar"}, u: {t: "Teeth", p: "/tiːθ/", s: "Dientes"} },
+        { v: {t: "Bridge", p: "/brɪdʒ/", s: "Puente"}, u: {t: "Breech", p: "/briːtʃ/", s: "Nalgas"} }
+    ];
+
+    let idx = 0;
+    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const rec = Recognition ? new Recognition() : null;
+
+    function play(type) {
+        window.speechSynthesis.cancel();
+        const word = type === 'v' ? pairs[idx].v.t : pairs[idx].u.t;
+        let u = new SpeechSynthesisUtterance(word);
+        u.lang = 'en-US';
+        u.rate = 0.7;
+        window.speechSynthesis.speak(u);
+        document.getElementById('left-side').classList.toggle('active', type === 'v');
+        document.getElementById('right-side').classList.toggle('active', type === 'u');
+    }
+
+    function start() {
+        if (!rec) return alert("Micro no compatible.");
+        rec.start();
+        document.getElementById('mic').classList.add('listening-active');
+    }
+
+    if(rec) {
+        rec.onresult = (e) => {
+            let heard = e.results[0][0].transcript.toLowerCase().trim();
+            document.getElementById('feedback').innerHTML = `<span class="success">Escuché: "${heard}"</span>`;
+            document.getElementById('next').classList.remove('hidden');
+            document.getElementById('skip').classList.add('hidden');
+        };
+        rec.onend = () => document.getElementById('mic').classList.remove('listening-active');
+    }
+
+    function updateDisplay() {
+        const p = pairs[idx];
+        document.getElementById('v-txt').innerText = p.v.t;
+        document.getElementById('v-ipa').innerText = p.v.p;
+        document.getElementById('v-trans').innerText = p.v.s;
+        document.getElementById('u-txt').innerText = p.u.t;
+        document.getElementById('u-ipa').innerText = p.u.p;
+        document.getElementById('u-trans').innerText = p.u.s;
+        document.getElementById('counter').innerText = `${idx + 1} / ${pairs.length}`;
+        document.getElementById('progress-bar').style.width = `${((idx + 1) / pairs.length) * 100}%`;
+        document.getElementById('next').classList.add('hidden');
+        document.getElementById('skip').classList.remove('hidden');
+        document.getElementById('left-side').classList.remove('active');
+        document.getElementById('right-side').classList.remove('active');
+    }
+
+    function nextPair() {
+        idx++;
+        if (idx < pairs.length) {
+            updateDisplay();
+        } else {
+            document.getElementById('quiz-area').innerHTML = `<h2 style="color:#00FF00">¡MAESTRÍA LOGRADA!</h2><button class="btn-speak" onclick="location.reload()">REPETIR</button>`;
+        }
+    }
+
+    updateDisplay();
+</script>
+</body>
+</html>
